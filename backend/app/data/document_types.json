@@ -1,0 +1,71 @@
+[
+  {
+    "id": "sast_report",
+    "name": "SAST Report",
+    "description": "Static Application Security Testing report",
+    "template_file": "sast_report_template.md",
+    "expected_sections": [
+      "Scope and Tooling",
+      "Findings Table (severity, CWE, location)",
+      "Remediation Status"
+    ]
+  },
+  {
+    "id": "dast_report",
+    "name": "DAST Report",
+    "description": "Dynamic Application Security Testing report",
+    "template_file": "dast_report_template.md",
+    "expected_sections": [
+      "Scope and Tooling",
+      "Findings Table",
+      "Remediation Status"
+    ]
+  },
+  {
+    "id": "dependency_check_report",
+    "name": "Dependency Check Report",
+    "description": "Software composition analysis / dependency vulnerability scan",
+    "template_file": "dependency_check_report_template.md",
+    "expected_sections": [
+      "Scanning Tool",
+      "Dependency Findings Table (package, version, CVE, severity)",
+      "Remediation Status"
+    ]
+  },
+  {
+    "id": "automated_pentest_report",
+    "name": "Automated Pentest Report",
+    "description": "Automated, tooling-driven penetration test report",
+    "template_file": "automated_pentest_report_template.md",
+    "expected_sections": [
+      "Scope",
+      "Methodology / Tooling",
+      "Findings Table",
+      "Remediation Status"
+    ]
+  },
+  {
+    "id": "manual_pentest_report",
+    "name": "Manual Pentest Report",
+    "description": "Human-led penetration test report",
+    "template_file": "manual_pentest_report_template.md",
+    "expected_sections": [
+      "Scope",
+      "Methodology",
+      "Findings Table",
+      "Risk Rating Rationale",
+      "Remediation Status"
+    ]
+  },
+  {
+    "id": "overall_security_report",
+    "name": "Overall Security Report",
+    "description": "Consolidated findings and dispositions across all five assessments",
+    "template_file": "overall_security_report_template.md",
+    "expected_sections": [
+      "Consolidated Findings Table (source report, finding, severity)",
+      "Disposition and Justification per Finding",
+      "Security Lead Sign-off"
+    ]
+  }
+]

@@ -1,0 +1,35 @@
+{
+  "project_type": "software_project",
+  "requirements": [
+    {
+      "document_type": "sast_report",
+      "condition": null,
+      "citation": "Sec Policy SEC-POL-01 §3.1 – Static Application Security Testing"
+    },
+    {
+      "document_type": "dast_report",
+      "condition": null,
+      "citation": "Sec Policy SEC-POL-01 §3.2 – Dynamic Application Security Testing"
+    },
+    {
+      "document_type": "dependency_check_report",
+      "condition": null,
+      "citation": "Sec Policy SEC-POL-01 §3.3 – Dependency and Software Composition Analysis"
+    },
+    {
+      "document_type": "automated_pentest_report",
+      "condition": null,
+      "citation": "Sec Policy SEC-POL-01 §4.1 – Automated Penetration Testing"
+    },
+    {
+      "document_type": "manual_pentest_report",
+      "condition": null,
+      "citation": "Sec Policy SEC-POL-01 §4.2 – Manual Penetration Testing"
+    },
+    {
+      "document_type": "overall_security_report",
+      "condition": null,
+      "citation": "Sec Policy SEC-POL-01 §5 – Consolidated Reporting"
+    }
+  ]
+}
