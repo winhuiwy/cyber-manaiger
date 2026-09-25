@@ -1,6 +1,6 @@
-# CyberManAIger (POC)
+# CyberManAIger
 
-A hackathon proof-of-concept for a cybersecurity compliance assistant, scoped to
+A proof-of-concept for a cybersecurity compliance assistant, scoped to
 software project cyber-security requirements. The goal is to compress a review that
 would otherwise take a human verifier weeks or months into minutes — helping teams
 move fast, not gatekeeping them. Every project must produce a SAST, DAST, Dependency
@@ -83,9 +83,9 @@ pre-filled sample per document type, each written to land on a specific badge:
    expand it to see both the SAST contradiction and the omitted finding flagged
    by name, each citing which source report it came from.
 
-## Future improvements
+## Future enhancements
 - CVE checker - checks CVEs listed in the reports and cross-checks them against what's online
 - EOS/EOL checker - checks libraries using internet and notifies if any of them is reaching EOS/EOL - this would require patching or waivers according to policy
 - After first 5 documents are uploaded, click a button to auto-generate the overall report - eliminates manual copying, prevents mismatches
 - AI to edit the documents directly instead of stating suggestions (how to have guardrails for this?)
-- For now we only have one report for the 5 excluding overall report. But in actual practice there should be one scanner-generated report AND one organisation-specific report in which the project manager should input their response to each finding (false positive/remediated/mitigated/justified). There can be a feature to auto-generate the org-specific report from the scanner report, and project manager would only need to fill in their response.
+- For the 5 excluding overall report, we only have one report each for now. But in practice there should be one scanner-generated report AND one organisation-specific report in which the project manager should input their response to each finding (false positive/remediated/mitigated/justified). There can be a feature to auto-generate the org-specific report from the scanner report, and project manager would only need to fill in their response.
