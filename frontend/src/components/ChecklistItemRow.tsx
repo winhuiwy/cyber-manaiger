@@ -1,9 +1,18 @@
 "use client";
 
 import { useRef, useState } from "react";
-import { templateDownloadUrl, uploadSubmission } from "@/lib/api";
+import { clearSubmission, templateDownloadUrl, uploadSubmission } from "@/lib/api";
 import type { ChecklistItem } from "@/lib/types";
 import StatusBadge from "./StatusBadge";
+
+function hasFindingsFor(item: ChecklistItem): boolean {
+  return (
+    !!item.submission &&
+    (item.submission.completeness_findings.length > 0 ||
+      item.submission.quality_findings.length > 0 ||
+      item.submission.cross_check_findings.length > 0)
+  );
+}
 
 export default function ChecklistItemRow({
   item,
@@ -15,15 +24,15 @@ export default function ChecklistItemRow({
   onUploaded: () => void | Promise<void>;
 }) {
   const [uploading, setUploading] = useState(false);
-  const [expanded, setExpanded] = useState(false);
+  const [clearing, setClearing] = useState(false);
+  // Open by default whenever there's something to review, so a fresh page
+  // load (e.g. after restarting the app) shows the analysis immediately
+  // instead of requiring a "View details" click to reveal what's already there.
+  const [expanded, setExpanded] = useState(() => hasFindingsFor(item));
   const [error, setError] = useState<string | null>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
-  const hasFindings =
-    !!item.submission &&
-    (item.submission.completeness_findings.length > 0 ||
-      item.submission.quality_findings.length > 0 ||
-      item.submission.cross_check_findings.length > 0);
+  const hasFindings = hasFindingsFor(item);
 
   async function handleFileChange(e: React.ChangeEvent<HTMLInputElement>) {
     const file = e.target.files?.[0];
@@ -42,46 +51,67 @@ export default function ChecklistItemRow({
     }
   }
 
+  async function handleClear() {
+    setClearing(true);
+    setError(null);
+    try {
+      await clearSubmission(projectId, item.document_type);
+      await onUploaded();
+    } catch (err) {
+      setError((err as Error).message);
+    } finally {
+      setClearing(false);
+    }
+  }
+
   return (
     <div className="rounded-lg border border-slate-200 p-4">
-      <div className="flex flex-wrap items-start justify-between gap-3">
-        <div>
-          <div className="flex items-center gap-2">
-            <h3 className="text-sm font-semibold text-slate-900">{item.name}</h3>
-            <StatusBadge item={item} />
-          </div>
-          <p className="mt-0.5 text-xs text-slate-500">{item.description}</p>
-          <p className="mt-1 text-xs italic text-slate-400">{item.citation}</p>
+      <div>
+        <div className="flex items-center gap-2">
+          <h3 className="text-sm font-semibold text-slate-900">{item.name}</h3>
+          <StatusBadge item={item} />
         </div>
+        <p className="mt-0.5 text-xs text-slate-500">{item.description}</p>
+        <p className="mt-1 text-xs italic text-slate-400">{item.citation}</p>
+      </div>
 
-        <div className="flex shrink-0 items-center gap-2">
-          <a
-            href={templateDownloadUrl(item.document_type)}
+      <div className="mt-3 flex flex-wrap items-center gap-2">
+        <a
+          href={templateDownloadUrl(item.document_type)}
+          className="rounded-md border border-slate-300 px-3 py-1.5 text-xs font-medium text-slate-700 hover:bg-slate-50"
+        >
+          Download template
+        </a>
+        <label className="cursor-pointer rounded-md bg-slate-900 px-3 py-1.5 text-xs font-medium text-white hover:bg-slate-700">
+          {uploading ? "Reviewing…" : item.submission ? "Re-upload" : "Upload"}
+          <input
+            ref={fileInputRef}
+            type="file"
+            accept=".md,.txt,.pdf"
+            className="hidden"
+            disabled={uploading}
+            onChange={handleFileChange}
+          />
+        </label>
+        {hasFindings && (
+          <button
+            type="button"
+            onClick={() => setExpanded((v) => !v)}
             className="rounded-md border border-slate-300 px-3 py-1.5 text-xs font-medium text-slate-700 hover:bg-slate-50"
           >
-            Download template
-          </a>
-          <label className="cursor-pointer rounded-md bg-slate-900 px-3 py-1.5 text-xs font-medium text-white hover:bg-slate-700">
-            {uploading ? "Reviewing…" : item.submission ? "Re-upload" : "Upload"}
-            <input
-              ref={fileInputRef}
-              type="file"
-              accept=".md,.txt,.pdf"
-              className="hidden"
-              disabled={uploading}
-              onChange={handleFileChange}
-            />
-          </label>
-          {hasFindings && (
-            <button
-              type="button"
-              onClick={() => setExpanded((v) => !v)}
-              className="rounded-md border border-slate-300 px-3 py-1.5 text-xs font-medium text-slate-700 hover:bg-slate-50"
-            >
-              {expanded ? "Hide details" : "View details"}
-            </button>
-          )}
-        </div>
+            {expanded ? "Hide details" : "View details"}
+          </button>
+        )}
+        {item.submission && (
+          <button
+            type="button"
+            onClick={handleClear}
+            disabled={clearing}
+            className="rounded-md border border-slate-300 px-3 py-1.5 text-xs font-medium text-red-600 hover:bg-red-50 disabled:opacity-50"
+          >
+            {clearing ? "Clearing…" : "Clear"}
+          </button>
+        )}
       </div>
 
       {error && <p className="mt-2 text-xs text-red-600">{error}</p>}

@@ -1,7 +1,7 @@
 "use client";
 
 import { useCallback, useEffect, useState } from "react";
-import { createProject, getChecklist, listProjects } from "@/lib/api";
+import { clearAllSubmissions, createProject, getChecklist, listProjects } from "@/lib/api";
 import type { ChecklistItem } from "@/lib/types";
 import ChecklistItemRow from "@/components/ChecklistItemRow";
 import QAPanel from "@/components/QAPanel";
@@ -12,6 +12,7 @@ export default function HomePage() {
   const [projectId, setProjectId] = useState<string | null>(null);
   const [checklist, setChecklist] = useState<ChecklistItem[]>([]);
   const [loading, setLoading] = useState(true);
+  const [resetting, setResetting] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
   const refreshChecklist = useCallback(async (id: string) => {
@@ -39,6 +40,23 @@ export default function HomePage() {
   }, [refreshChecklist]);
 
   const missingCount = checklist.filter((c) => c.status === "missing").length;
+  const hasAnySubmission = checklist.some((c) => c.submission !== null);
+
+  async function handleResetAll() {
+    if (!projectId) return;
+    if (!window.confirm("Clear all uploaded reports for this project? This cannot be undone.")) {
+      return;
+    }
+    setResetting(true);
+    try {
+      await clearAllSubmissions(projectId);
+      await refreshChecklist(projectId);
+    } catch (err) {
+      setError((err as Error).message);
+    } finally {
+      setResetting(false);
+    }
+  }
 
   return (
     <main className="mx-auto w-full max-w-5xl flex-1 px-6 py-10">
@@ -47,11 +65,23 @@ export default function HomePage() {
           <h1 className="text-2xl font-semibold text-slate-900">CyberManAIger</h1>
           <p className="text-sm text-slate-500">Software Project — Cybersecurity Compliance Checklist</p>
         </div>
-        {missingCount > 0 && (
-          <span className="rounded-full bg-red-100 px-3 py-1 text-xs font-medium text-red-700">
-            {missingCount} document{missingCount === 1 ? "" : "s"} outstanding
-          </span>
-        )}
+        <div className="flex items-center gap-3">
+          {missingCount > 0 && (
+            <span className="rounded-full bg-red-100 px-3 py-1 text-xs font-medium text-red-700">
+              {missingCount} document{missingCount === 1 ? "" : "s"} outstanding
+            </span>
+          )}
+          {hasAnySubmission && (
+            <button
+              type="button"
+              onClick={handleResetAll}
+              disabled={resetting}
+              className="rounded-md border border-slate-300 px-3 py-1.5 text-xs font-medium text-slate-700 hover:bg-slate-50 disabled:opacity-50"
+            >
+              {resetting ? "Resetting…" : "Reset all"}
+            </button>
+          )}
+        </div>
       </div>
 
       {loading ? (

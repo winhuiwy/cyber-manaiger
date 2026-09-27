@@ -77,3 +77,19 @@ async def upload_submission(
 @router.get("/{project_id}", response_model=List[Submission])
 def list_submissions(project_id: str):
     return storage.list_submissions(project_id)
+
+
+@router.delete("/{project_id}", status_code=204)
+def clear_submissions(project_id: str):
+    project = storage.get_project(project_id)
+    if not project:
+        raise HTTPException(404, "Project not found")
+    storage.delete_submissions(project_id)
+
+
+@router.delete("/{project_id}/{document_type}", status_code=204)
+def clear_submission(project_id: str, document_type: str):
+    project = storage.get_project(project_id)
+    if not project:
+        raise HTTPException(404, "Project not found")
+    storage.delete_submissions(project_id, document_type)

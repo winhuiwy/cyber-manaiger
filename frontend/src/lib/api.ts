@@ -49,6 +49,18 @@ export async function uploadSubmission(
   );
 }
 
+export async function clearSubmission(projectId: string, documentType: string): Promise<void> {
+  const res = await fetch(`${API_BASE}/submissions/${projectId}/${documentType}`, {
+    method: "DELETE",
+  });
+  if (!res.ok) throw new Error(`API error ${res.status}: ${await res.text()}`);
+}
+
+export async function clearAllSubmissions(projectId: string): Promise<void> {
+  const res = await fetch(`${API_BASE}/submissions/${projectId}`, { method: "DELETE" });
+  if (!res.ok) throw new Error(`API error ${res.status}: ${await res.text()}`);
+}
+
 export async function askQuestion(question: string, projectId?: string): Promise<string> {
   const data = await handle<{ answer: string }>(
     await fetch(`${API_BASE}/qa`, {

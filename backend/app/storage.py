@@ -56,3 +56,14 @@ def save_submission(submission: Submission) -> Submission:
     submissions.append(json.loads(submission.model_dump_json()))
     _save(SUBMISSIONS_FILE, submissions)
     return submission
+
+
+def delete_submissions(project_id: str, document_type: Optional[str] = None) -> None:
+    submissions = _load(SUBMISSIONS_FILE)
+    remaining = [
+        s
+        for s in submissions
+        if s["project_id"] != project_id
+        or (document_type is not None and s["document_type"] != document_type)
+    ]
+    _save(SUBMISSIONS_FILE, remaining)
