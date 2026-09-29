@@ -24,6 +24,11 @@ export interface CrossCheckFinding {
   problem: string;
 }
 
+export interface TypeMismatchWarning {
+  detected_type: string | null;
+  reason: string;
+}
+
 export interface Submission {
   id: string;
   project_id: string;
@@ -34,6 +39,8 @@ export interface Submission {
   completeness_findings: SectionFinding[];
   quality_findings: QualityFinding[];
   cross_check_findings: CrossCheckFinding[];
+  missing_prerequisite_reports: string[];
+  type_mismatch: TypeMismatchWarning | null;
   uploaded_at: string;
 }
 

@@ -32,6 +32,12 @@ class CrossCheckFinding(BaseModel):
     problem: str
 
 
+class TypeMismatchWarning(BaseModel):
+    # None means the document doesn't look like any known report type at all.
+    detected_type: Optional[str] = None
+    reason: str
+
+
 class Submission(BaseModel):
     id: str
     project_id: str
@@ -42,6 +48,8 @@ class Submission(BaseModel):
     completeness_findings: List[SectionFinding] = []
     quality_findings: List[QualityFinding] = []
     cross_check_findings: List[CrossCheckFinding] = []
+    missing_prerequisite_reports: List[str] = []
+    type_mismatch: Optional[TypeMismatchWarning] = None
     uploaded_at: datetime
 
 

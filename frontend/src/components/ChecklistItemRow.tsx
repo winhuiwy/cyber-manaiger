@@ -5,12 +5,19 @@ import { clearSubmission, templateDownloadUrl, uploadSubmission } from "@/lib/ap
 import type { ChecklistItem } from "@/lib/types";
 import StatusBadge from "./StatusBadge";
 
+function formatList(items: string[]): string {
+  if (items.length <= 1) return items.join("");
+  return `${items.slice(0, -1).join(", ")} and ${items[items.length - 1]}`;
+}
+
 function hasFindingsFor(item: ChecklistItem): boolean {
   return (
     !!item.submission &&
     (item.submission.completeness_findings.length > 0 ||
       item.submission.quality_findings.length > 0 ||
-      item.submission.cross_check_findings.length > 0)
+      item.submission.cross_check_findings.length > 0 ||
+      item.submission.missing_prerequisite_reports.length > 0 ||
+      !!item.submission.type_mismatch)
   );
 }
 
@@ -118,6 +125,27 @@ export default function ChecklistItemRow({
 
       {expanded && item.submission && (
         <div className="mt-4 space-y-4 border-t border-slate-200 pt-4">
+          {item.submission.type_mismatch && (
+            <div className="rounded-md bg-red-50 px-3 py-2 text-xs text-red-800">
+              <span className="font-semibold">This might be the wrong file — </span>
+              {item.submission.type_mismatch.detected_type
+                ? `it reads like a ${item.submission.type_mismatch.detected_type}, not a ${item.name}.`
+                : `it doesn't read like a ${item.name}, or any other recognized report.`}{" "}
+              {item.submission.type_mismatch.reason} If you meant to upload something else, click
+              Clear and re-upload the correct file.
+            </div>
+          )}
+
+          {item.submission.missing_prerequisite_reports.length > 0 && (
+            <div className="rounded-md bg-rose-50 px-3 py-2 text-xs text-rose-700">
+              <span className="font-semibold">Incomplete cross-check — </span>
+              this was uploaded before {formatList(item.submission.missing_prerequisite_reports)}{" "}
+              {item.submission.missing_prerequisite_reports.length === 1 ? "was" : "were"} submitted, so
+              those findings couldn&apos;t be checked against this report.
+              Re-upload once all five underlying reports are in for a full cross-check.
+            </div>
+          )}
+
           {item.submission.completeness_findings.length > 0 && (
             <div>
               <h4 className="text-xs font-semibold uppercase tracking-wide text-slate-500">

@@ -1,8 +1,8 @@
 import json
-from typing import List, Tuple
+from typing import List, Optional, Tuple
 
 from . import openai_client
-from ..models import CrossCheckFinding, QualityFinding, SectionFinding
+from ..models import CrossCheckFinding, QualityFinding, SectionFinding, TypeMismatchWarning
 
 REVIEW_SYSTEM_PROMPT = """You are a meticulous security compliance reviewer for
 CyberManAIger. Your goal is to give the project team fast, actionable feedback so they can
@@ -63,6 +63,31 @@ UNDERLYING REPORTS:
 {underlying_reports}
 """
 
+CLASSIFY_SYSTEM_PROMPT = """You are a document classifier for CyberManAIger, a security
+compliance system. A project team just uploaded a document to satisfy a specific security
+report requirement. Your job is to catch accidental mis-uploads before a reviewer wastes
+time on them — e.g. someone uploading their DAST report into the SAST Report slot, or
+uploading an unrelated document entirely.
+
+Look at the document's actual content (not its filename) and decide which ONE of the
+following report types it most closely matches, or "none" if it clearly isn't any of
+them (an unrelated document, an unfilled template, or gibberish).
+
+REPORT TYPES:
+{type_descriptions}
+
+Respond with STRICT JSON only, no markdown fences, no commentary, matching this schema:
+
+{{
+  "best_match": "<one of the report type ids above, or \\"none\\">",
+  "confidence": "high"|"medium"|"low",
+  "reason": "<one short sentence explaining the call>"
+}}
+
+Use "low" confidence whenever the document is short, ambiguous, or could plausibly be more
+than one of the listed types — the caller only acts on "high" or "medium".
+"""
+
 
 def _parse_json(raw: str) -> dict:
     raw = raw.strip()
@@ -108,3 +133,34 @@ def cross_check_overall_report(
     )
     data = _parse_json(raw)
     return [CrossCheckFinding(**f) for f in data.get("cross_check_findings", [])]
+
+
+def check_type_mismatch(
+    document_type_id: str, all_doc_types: List[dict], document_text: str
+) -> Optional[TypeMismatchWarning]:
+    if not document_text.strip():
+        return None
+
+    type_descriptions = "\n".join(f"- {d['id']}: {d['name']} — {d['description']}" for d in all_doc_types)
+    system = CLASSIFY_SYSTEM_PROMPT.format(type_descriptions=type_descriptions)
+    raw = openai_client.complete(system=system, user=document_text, max_tokens=200, json_mode=True)
+
+    try:
+        data = _parse_json(raw)
+    except json.JSONDecodeError:
+        return None
+
+    best_match = data.get("best_match")
+    confidence = data.get("confidence")
+    reason = data.get("reason", "")
+    if confidence not in ("high", "medium") or not best_match:
+        return None
+
+    if best_match == "none":
+        return TypeMismatchWarning(detected_type=None, reason=reason)
+
+    if best_match != document_type_id:
+        names = {d["id"]: d["name"] for d in all_doc_types}
+        return TypeMismatchWarning(detected_type=names.get(best_match, best_match), reason=reason)
+
+    return None

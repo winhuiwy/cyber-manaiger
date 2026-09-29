@@ -39,23 +39,43 @@ async def upload_submission(
     raw = await file.read()
     text = _extract_text(file.filename or "", raw)
 
-    completeness, quality = review_service.review_document(
-        document_type_name=doc_type["name"],
-        expected_sections=doc_type["expected_sections"],
+    type_mismatch = review_service.check_type_mismatch(
+        document_type_id=document_type,
+        all_doc_types=list(doc_types.values()),
         document_text=text,
     )
 
+    if type_mismatch:
+        # Reviewing completeness/quality against the wrong document's expected
+        # sections would just produce noise — the mismatch is the only finding
+        # that matters until the correct file is uploaded.
+        completeness, quality = [], []
+    else:
+        completeness, quality = review_service.review_document(
+            document_type_name=doc_type["name"],
+            expected_sections=doc_type["expected_sections"],
+            document_text=text,
+        )
+
     cross_check = []
+    missing_prerequisites = []
     if document_type == "overall_security_report":
         base_type_ids = [
-            r["document_type"] for r in load_rules()["requirements"] if r["condition"] is None
+            r["document_type"]
+            for r in load_rules()["requirements"]
+            if r["condition"] is None and r["document_type"] != "overall_security_report"
         ]
         underlying = []
         for type_id in base_type_ids:
             sub = storage.latest_submission(project_id, type_id)
-            if sub:
+            # A submission flagged as the wrong document type doesn't actually
+            # satisfy the prerequisite — don't feed mislabeled content into the
+            # cross-check.
+            if sub and not sub.type_mismatch:
                 underlying.append({"document_type_name": doc_types[type_id]["name"], "text": sub.content_text})
-        if underlying:
+            else:
+                missing_prerequisites.append(doc_types[type_id]["name"])
+        if underlying and not type_mismatch:
             cross_check = review_service.cross_check_overall_report(underlying, text)
 
     submission = Submission(
@@ -68,6 +88,8 @@ async def upload_submission(
         completeness_findings=completeness,
         quality_findings=quality,
         cross_check_findings=cross_check,
+        missing_prerequisite_reports=missing_prerequisites,
+        type_mismatch=type_mismatch,
         uploaded_at=datetime.now(timezone.utc),
     )
     storage.save_submission(submission)
